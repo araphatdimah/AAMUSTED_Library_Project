@@ -1,0 +1,199 @@
+<?php
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Include the connection file
+    include "connection.php";
+
+    // Get the user inputs
+    $fullName = $_POST['fullName'];
+    $contact = $_POST['contact'];
+    $indexNumber = $_POST['indexNumber'];
+    $department = $_POST['department'];
+    $request = $_POST['request'];
+
+    // Validate the user inputs
+    if (empty($fullName) || empty($indexNumber)) {
+        echo "Invalid inputs. Please cross-check and provide the appropriate data";
+        die;
+    }
+
+    $prefix = "LPC";
+    $pc = [1, 2, 3, 4, 5];
+    session_start();
+
+    // Check if there are available PCs
+    if (!empty($pc)) {
+        // Check if the selected PCs have been stored in the session
+        if (!isset($_SESSION['selectedPC'])) {
+            $_SESSION['selectedPC'] = null;
+        }
+
+        // Retrieve the previously selected PC from the session
+        $selectedPC = $_SESSION['selectedPC'];
+
+        // Check if a PC has already been assigned to the student
+        if (empty($selectedPC)) {
+            // Randomly select a PC from the available PCs
+            $selectedPC = $prefix . array_shift($pc);
+
+            // Store the selected PC in the session
+            $_SESSION['selectedPC'] = $selectedPC;
+
+            // Prepare the SQL statement to insert the student details
+            $stmt = mysqli_prepare($con, "INSERT INTO student (fullName, contact, indexNumber, department, request, pcNum) VALUES (?, ?, ?, ?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "ssssss", $fullName, $contact, $indexNumber, $department, $request, $selectedPC);
+
+            // Execute the SQL statement to insert the student details
+            if (mysqli_stmt_execute($stmt)) {
+                // Student data inserted successfully
+                echo "<script>alert('Registered successfully. Please, head to PC $selectedPC');</script>";
+            } else {
+                echo "Registration unsuccessful. Cross-check your data";
+            }
+        } else {
+            // A PC has already been assigned to the student
+            echo "<script>alert('Student already has a PC assigned.');</script>";
+        }
+    } else {
+        // No available PCs
+        echo "<script>alert('All available PCs are in use at the moment.');</script>";
+    }
+}
+?>
+
+
+
+
+
+  $stmt1 = mysqli_prepare($con, "INSERT INTO student (userID, fullName, contact, indexNumber, department, request) VALUES (?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt1, "ssssss", $userID, $fullName, $contact, $indexNumber, $department, $request);
+    $stmt = mysqli_prepare($con, "INSERT INTO studentinfo (userID, fullName, contact, indexNumber, department, request) VALUES (?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, "ssssss", $userID, $fullName, $contact, $indexNumber, $department, $request);
+
+
+
+
+
+<?php
+session_start();
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Include the connection file
+    include "connection.php";
+
+    // Get the user inputs
+    $fullName = $_POST['fullName'];
+    $contact = $_POST['contact'];
+    $indexNumber = $_POST['indexNumber'];
+    $department = $_POST['department'];
+    $request = $_POST['request'];
+
+    $text = "";
+    $num = rand(6, 10);
+    for ($i = 0; $i < $num; $i++) {
+        $text .= rand(0, 9);
+    }
+    $userID = $text;
+
+    // Validate the user inputs
+    if (empty($fullName) || empty($indexNumber)) {
+        echo "<script>alert('Name or index number field(s) cannot be empty');</script>";
+    } else {
+        $stmt3 = mysqli_prepare($con, "SELECT * FROM student WHERE fullName = ? AND indexNumber = ?");
+        mysqli_stmt_bind_param($stmt3, "ss", $fullName, $indexNumber);
+        mysqli_stmt_execute($stmt3);
+        $results = mysqli_stmt_get_result($stmt3);
+
+        if (mysqli_num_rows($results) > 0) {
+            echo "<script>alert('$fullName or $indexNumber is already signed in.');</script>";
+        } else {
+            $prefix = "LPC";
+
+            // Check if there are available PCs in the session
+            if (!isset($_SESSION['selectedPCs'])) {
+                $_SESSION['selectedPCs'] = [5, 4, 3, 2, 1];
+            }
+
+            $selectedPCs = $_SESSION['selectedPCs'];
+
+            if (!empty($selectedPCs)) {
+                $length = count($selectedPCs);
+                for ($i = 0; $i < $length; $i++) {
+                    $selectedPC = $selectedPCs[$i];
+                    $assignedPC = $prefix . str_pad($selectedPC, 2, '0', STR_PAD_LEFT);
+
+                    // Add the selected PC to the list of already selected PCs
+                    $stmt = mysqli_prepare($con, "INSERT INTO student (userID, fullName, contact, indexNumber, department, request, selectedPC) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    mysqli_stmt_bind_param($stmt, "ssssssi", $userID, $fullName, $contact, $indexNumber, $department, $request, $selectedPC);
+                    $stmt1 = mysqli_prepare($con, "INSERT INTO studentinfo (userID, fullName, contact, indexNumber, department, request, selectedPC) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    mysqli_stmt_bind_param($stmt1, "ssssssi", $userID, $fullName, $contact, $indexNumber, $department, $request, $selectedPC);
+
+                    if (mysqli_stmt_execute($stmt) && mysqli_stmt_execute($stmt1)) {
+                        // Student data inserted successfully
+                        echo "<script>alert('Hi $fullName, your registration is successful. Please, head to PC $assignedPC');</script>";
+                    }
+
+                    // Remove the selected PC from the array and re-index it
+                    unset($selectedPCs[$i]);
+                    $selectedPCs = array_values($selectedPCs);
+                }
+
+                // Update the selectedPCs array in the session
+                $_SESSION['selectedPCs'] = $selectedPCs;
+            } else {
+                echo "<script>alert('Error! Please cross-check your data.');</script>";
+            }
+        }
+    }
+}
+?>
+
+
+
+
+
+<form id="searchForm" action="libarianPage.php" method="post" onsubmit="event.preventDefault(); searchAndDisplay()">
+  FROM: <input style="border:2px solid; border-radius:5px;" type="search" id="searchFrom" placeholder="Date from..?" name="fromSearch">
+  TO: <input style="border:2px solid; border-radius:5px;" type="search" id="searchTo" placeholder="Date to..?" name="toSearch">
+
+  <input style="background-color:green; border-radius:5px;" type="submit" value="Search" class="btn">
+</form>
+
+<script>
+  function searchAndDisplay() {
+    var fromSearch = document.getElementById("searchFrom").value;
+    var toSearch = document.getElementById("searchTo").value;
+
+    // Submit the form data using AJAX
+    $.ajax({
+      url: $("#searchForm").attr("action"),
+      type: "POST",
+      data: $("#searchForm").serialize(),
+      success: function(response) {
+        // Display the modal
+        $("#launch2").modal("show");
+        $("#modalContent").html(response);
+      },
+      error: function(xhr, status, error) {
+        console.log(error);
+      }
+    });
+  }
+</script>
+
+<!-- Modal -->
+<div class="modal fade" id="launch2" tabindex="-1" aria-labelledby="launch2Label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="launch2Label">Search Results</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="modalContent">
+        <!-- Display the search results here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+how do I attach a picture already in my uploads folder to a database.
